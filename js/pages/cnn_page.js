@@ -180,8 +180,8 @@
         var irregularity = clamp(Math.sqrt(varSum / n) / 55, 0, 1);
 
         // Perhitungan estimasi kematangan (berbasis daun hijau sehat + luas tajuk)
-        var rawMat = (greenRatio * 0.50 + leafCoverage * 0.35 + (1 - yellowRatio) * 0.15) * 100;
-        var maturityPct = clamp(Math.round(rawMat), 15, 96);
+        var rawMat = greenRatio * 0.60 + leafCoverage * 0.25 + (1 - yellowRatio) * 0.15;
+        var maturityPct = clamp(rawMat * 105, 10, 95);
 
         return {
             avgBrightness: avgBrightness,
@@ -441,26 +441,22 @@
             var stage = stageInfo(mat);
 
             var conditionLabel, conditionColor, conditionDesc;
-            if (stats.brownRatio > 0.18 || stats.spotRatio > 0.12) {
-                conditionLabel = 'Waspada (Bercak / Nekrosis)';
+            if (stats.yellowRatio > 0.35) {
+                conditionLabel = 'Perlu Perhatian (Klorosis)';
+                conditionColor = 'var(--dry)';
+                conditionDesc  = 'Terdeteksi proporsi daun menguning cukup signifikan (' + Math.round(stats.yellowRatio * 100) + '%), kemungkinan kekurangan nitrogen atau cahaya berlebih.';
+            } else if (stats.brownRatio > 0.20 || stats.spotRatio > 0.15) {
+                conditionLabel = 'Waspada (Bercak/Nekrosis)';
                 conditionColor = 'var(--bad)';
-                conditionDesc  = 'Terdeteksi lesi bercak (' + Math.round(stats.spotRatio * 100) + '%) dan nekrosis (' + Math.round(stats.brownRatio * 100) + '%). Disarankan isolasi tanaman dan periksa kelembapan media tanam.';
-            } else if (stats.yellowRatio > 0.30) {
-                conditionLabel = 'Perlu Perhatian (Klorosis / Menguning)';
-                conditionColor = 'var(--dry)';
-                conditionDesc  = 'Terdeteksi klorosis pada helai daun (' + Math.round(stats.yellowRatio * 100) + '%). Indikasi defisiensi nitrogen atau pencahayaan berlebih.';
-            } else if (stats.holeRatio > 0.10) {
-                conditionLabel = 'Waspada (Kerusakan Hama)';
-                conditionColor = 'var(--dry)';
-                conditionDesc  = 'Terdeteksi kerusakan lubang pada tajuk daun (' + Math.round(stats.holeRatio * 100) + '%). Periksa keberadaan ulat atau serangga pemakan daun.';
-            } else if (stats.greenRatio > 0.50) {
+                conditionDesc  = 'Terdeteksi nekrosis cokelat (' + Math.round(stats.brownRatio * 100) + '%) dan bercak gelap (' + Math.round(stats.spotRatio * 100) + '%). Periksa sirkulasi udara dan kelembapan.';
+            } else if (stats.greenRatio > 0.45) {
                 conditionLabel = 'Kondisi Baik & Sehat';
                 conditionColor = 'var(--ok)';
-                conditionDesc  = 'Daun selada didominasi jaringan fotosintesis sehat (' + Math.round(stats.greenRatio * 100) + '%). Pertumbuhan vegetatif dan struktur roset daun normal.';
+                conditionDesc  = 'Daun selada didominasi warna hijau segar (' + Math.round(stats.greenRatio * 100) + '%). Tajuk tanaman tumbuh subur dan merata.';
             } else {
-                conditionLabel = 'Kondisi Normal';
+                conditionLabel = 'Kondisi Cukup';
                 conditionColor = 'var(--muted)';
-                conditionDesc  = 'Kondisi tajuk tanaman dalam rentang wajar. Pemantauan berkala disarankan.';
+                conditionDesc  = 'Kondisi tanaman dalam ambang batas wajar, pemantauan berkala disarankan.';
             }
 
             if (overall) overall.style.borderLeft = '4px solid ' + conditionColor;
@@ -531,16 +527,9 @@
             var html = '';
             PESTS.forEach(function (pest) {
                 var conf = Math.round(pest.score(stats));
-                var labelColor = 'var(--ok)';
-                var statusText = '✓ Kondisi Aman (' + conf + '%)';
-
-                if (conf > 55) {
-                    labelColor = 'var(--bad)';
-                    statusText = '⚠ Terdeteksi (' + conf + '%)';
-                } else if (conf >= 35) {
-                    labelColor = 'var(--dry)';
-                    statusText = 'ℹ Indikasi Ringan (' + conf + '%)';
-                }
+                var detected = conf > 42;
+                var labelColor = detected ? 'var(--dry)' : 'var(--ok)';
+                var statusText = (detected ? '⚠ Terdeteksi ' : '✓ Aman ') + '(' + conf + '%)';
 
                 html +=
                     '<div style="margin-bottom:14px">' +
